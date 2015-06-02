@@ -1,13 +1,12 @@
 #!/bin/python3
 
 # TODO:
-# 1) revise hardcoded ball bouncing (in main())
-# 2) remove ball flickering (using new rectangles?)
-# 3) gameplay
-# 4) use pygame fonts and text to keep scorings
+# 1) gameplay
+# 2) organize code of main() in more functions
+# 3) use pygame fonts and text to keep scorings
 
 import pygame
-import random
+from random import choice
 
 class Colors:
     black = (0 , 0, 0) # RGB
@@ -18,48 +17,50 @@ class Display:
     height = 320
     center = (width//2, height//2)
     # paddles' starting coordinates
-    left_paddle_y = (int)(height * 0.45) # half of display, on the left
-    left_paddle_x = (int)(width * 0.20)
-    right_paddle_y = (int)(height * 0.45) # half of display, on the right
-    right_paddle_x = (int)(width * 0.80)
+    left_paddle_y = (int)(height * 0.45)
+    left_paddle_x = (int)(width * 0.10)
+    right_paddle_y = (int)(height * 0.45)
+    right_paddle_x = (int)(width * 0.90)
     # ball starting coordinates
     ball_x = center[0]
     ball_y = center[1]
 
 class Paddle:
-    height = 25
-    width = 10
+    height = 24
+    width = 5
     def __init__(self, x, y):
-        self.x = x # coordinates
+        self.x = x
         self.y = y
         # paddle's rectangle (used for movements and collisions)
         self.rect = pygame.Rect(self.x, self.y, Paddle.width, Paddle.height)
     def move_up(self):
-        self.rect.move_ip(0, -5)
+        self.rect.move_ip(0, -1)
     def move_down(self):
-        self.rect.move_ip(0, 5)
+        self.rect.move_ip(0, 1)
 
 class Ball:
     height = 5
     width = 5
     def __init__(self, x, y):
-        self.x = x # coordinates
+        self.x = x
         self.y = y
         # ball's rectangle (used for movements and collisions)
         self.rect = pygame.Rect(self.x, self.y, Ball.width, Ball.height)
-        #self.move((random.randint(5, 5), random.randint(center[0], 0))
-        self.move(5, 5)
-    def move(self, x, y):
-        # direction = (x, y)
-        #self.rect.move_ip(random.randint(-10, 10), random.randint(-10, 10))
-        #self.rect.move_ip(5, 5)
-        self.rect.move_ip(x, y)
+        # direction[0] represents the x-axis, direction[1] the y-axis
+        # at instantiation the ball moves randomly either to the left or to
+        # the right, in a straightforward line or with an inclination of 45°
+        # values greater than 1 leave a trail in the ball movements
+        self.direction = [choice([-1, 1]), choice([-1, 0, 1])]
+    def move(self):
+        # unless acted upon, the ball keeps its direction
+        self.rect.move_ip(self.direction[0], self.direction[1])
 
 def init():
     pygame.init()
     game_display = pygame.display.set_mode((Display.width, Display.height))
     pygame.display.set_caption('gnop') # display title
-    return game_display
+    game_display_rect = game_display.get_rect() # used for collisions
+    return game_display, game_display_rect
 
 def draw_background(game_display):
     game_display.fill(Colors.black)
@@ -70,14 +71,13 @@ def draw_background(game_display):
                             (Display.center[0], y+5), 3) # thick=3
 
 def draw_gameplay(game_display, LeftPaddle, RightPaddle, Ball):
-    # draw paddles (0 fills the rectangles, 1 leaves them empty)
+    # draw paddles and ball (0 fills the rectangles, 1 leaves them empty)
     pygame.draw.rect(game_display, Colors.white, LeftPaddle, 0)
     pygame.draw.rect(game_display, Colors.white, RightPaddle, 0)
     pygame.draw.rect(game_display, Colors.white, Ball, 0)
 
 def main():
-    game_display = init()
-    game_display_rect = game_display.get_rect() # used for collisions
+    game_display, game_display_rect = init()
     game_clock = pygame.time.Clock()
     # create paddles
     LeftPaddle = Paddle(Display.left_paddle_x, Display.left_paddle_y)
@@ -85,14 +85,13 @@ def main():
     # create ball
     MainBall = Ball(Display.ball_x, Display.ball_y)
     # main loop
-    direction = [5, 5]
     quit_signal = False
     while not quit_signal:
         for event in pygame.event.get():
             print(event)
             if event.type == pygame.QUIT:
                 quit_signal = True
-        pressed_keys = pygame.key.get_pressed() # list of pressed keys
+        pressed_keys = pygame.key.get_pressed() # list
         # Left paddle movements
         if pressed_keys[pygame.K_w]:
             LeftPaddle.move_up()
@@ -104,22 +103,27 @@ def main():
         if pressed_keys[pygame.K_DOWN]:
             RightPaddle.move_down()
 
-        # hardcoded bouncing
-        MainBall.move(direction[0], direction[1])
-        if MainBall.rect.left < 5 or MainBall.rect.right > Display.width-5:
-            direction[0] = -direction[0]
-        if MainBall.rect.top < 5 or MainBall.rect.top > Display.height-8:
-            direction[1] = -direction[1]
+        # ball bouncing
+        if MainBall.rect.left < 0 or MainBall.rect.right > Display.width:
+            MainBall.direction[0] = -MainBall.direction[0]
+        if MainBall.rect.top < 0 or MainBall.rect.bottom > Display.height:
+            MainBall.direction[1] = -MainBall.direction[1]
+        MainBall.move()
+
+        # paddles' - ball collition
+        if MainBall.rect.colliderect(RightPaddle.rect):
+            MainBall.direction[0] = -MainBall.direction[0]
+        if MainBall.rect.colliderect(LeftPaddle.rect):
+            MainBall.direction[0] = -MainBall.direction[0]
 
         # ensure paddles are inside the game display
         LeftPaddle.rect.clamp_ip(game_display_rect)
         RightPaddle.rect.clamp_ip(game_display_rect)
-        # TODO: check ball
+
         draw_background(game_display)
-        # draw the paddles and the ball
         draw_gameplay(game_display, LeftPaddle, RightPaddle, MainBall)
         pygame.display.update() # renders the display
-        game_clock.tick(30) # FPS
+        game_clock.tick(250) # FPS
     pygame.quit()
     quit()
 
