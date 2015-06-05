@@ -1,12 +1,12 @@
 #!/bin/python3
 
 # TODO:
-# 1) gameplay
-# 2) organize code of main() in more functions
-# 3) use pygame fonts and text to keep scorings
+# 1) organize code of main() in more functions and clean thoroughly the code
+# 2) use pygame fonts and text to keep scorings
+# 3) add sound
 
 import pygame
-from random import choice
+from random import choice, randint
 
 class Colors:
     black = (0 , 0, 0) # RGB
@@ -23,36 +23,40 @@ class Display:
     right_paddle_x = (int)(width * 0.90)
     # ball starting coordinates
     ball_x = center[0]
-    ball_y = center[1]
+    ball_y = randint(0, height)
 
 class Paddle:
-    height = 24
+    height = 27
     width = 5
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        # paddle's rectangle (used for movements and collisions)
-        #self.rect = pygame.Rect(self.x, self.y, Paddle.width, Paddle.height)
-
-        # a paddle is formed by three, contiguous, rectangles to allow
+        # a paddle is formed by five, contiguous, rectangles to allow
         # for different resulting angles when hitting the ball
-        toprect = pygame.Rect(self.x, self.y-(Paddle.height//3),
-                              Paddle.width, Paddle.height//3)
-        midrect = pygame.Rect(self.x, self.y,  Paddle.width,
-                              Paddle.height//3)
-        bottomrect = pygame.Rect(self.x, self.y+(Paddle.height//3),
-                                      Paddle.width, Paddle.height//3)
-        self.rectlist = [toprect, midrect, bottomrect]
+        top = pygame.Rect(self.x, self.y-2*(Paddle.height//5),
+                          Paddle.width, Paddle.height//5)
+        middletop = pygame.Rect(self.x, self.y-(Paddle.height//5),
+                                Paddle.width, Paddle.height//5)
+        middle = pygame.Rect(self.x, self.y,  Paddle.width, Paddle.height//5)
+        middlebottom = pygame.Rect(self.x, self.y+(Paddle.height//5),
+                                   Paddle.width, Paddle.height//5)
+        bottom = pygame.Rect(self.x, self.y+2*(Paddle.height//5),
+                             Paddle.width, Paddle.height//5)
+        self.rectlist = [top, middletop, middle, middlebottom, bottom]
     def move_up(self):
         if self.rectlist[0].top > 20: # the paddles cannot reach the top
             self.rectlist[0].move_ip(0, -5)
             self.rectlist[1].move_ip(0, -5)
             self.rectlist[2].move_ip(0, -5)
+            self.rectlist[3].move_ip(0, -5)
+            self.rectlist[4].move_ip(0, -5)
     def move_down(self):
-        if self.rectlist[2].bottom < Display.height-20: # nor the bottom
+        if self.rectlist[4].bottom < Display.height-20: # nor the bottom
             self.rectlist[0].move_ip(0, 5)
             self.rectlist[1].move_ip(0, 5)
             self.rectlist[2].move_ip(0, 5)
+            self.rectlist[3].move_ip(0, 5)
+            self.rectlist[4].move_ip(0, 5)
 
 class Ball:
     height = 5
@@ -66,7 +70,7 @@ class Ball:
         # at instantiation the ball moves randomly either to the left or to
         # the right, in a straightforward line or with an inclination of 45°
         # values greater than 1 leave a trail in the ball movements
-        self.direction = [choice([-5, 5]), choice([-5, 0, 5])]
+        self.direction = [choice([-3, 3]), randint(-2, 2)]
     def move(self):
         # unless acted upon, the ball keeps its direction
         self.rect.move_ip(self.direction[0], self.direction[1])
@@ -91,9 +95,16 @@ def draw_gameplay(game_display, LeftPaddle, RightPaddle, Ball):
     pygame.draw.rect(game_display, Colors.white, LeftPaddle.rectlist[0], 0)
     pygame.draw.rect(game_display, Colors.white, LeftPaddle.rectlist[1], 0)
     pygame.draw.rect(game_display, Colors.white, LeftPaddle.rectlist[2], 0)
+    pygame.draw.rect(game_display, Colors.white, LeftPaddle.rectlist[3], 0)
+    pygame.draw.rect(game_display, Colors.white, LeftPaddle.rectlist[4], 0)
     pygame.draw.rect(game_display, Colors.white, RightPaddle.rectlist[0], 0)
     pygame.draw.rect(game_display, Colors.white, RightPaddle.rectlist[1], 0)
     pygame.draw.rect(game_display, Colors.white, RightPaddle.rectlist[2], 0)
+    pygame.draw.rect(game_display, Colors.white, RightPaddle.rectlist[3], 0)
+    pygame.draw.rect(game_display, Colors.white, RightPaddle.rectlist[4], 0)
+    pygame.draw.rect(game_display, Colors.white, Ball, 0)
+
+def draw_ball(game_display, Ball):
     pygame.draw.rect(game_display, Colors.white, Ball, 0)
 
 def main():
@@ -105,6 +116,7 @@ def main():
     # create ball
     MainBall = Ball(Display.ball_x, Display.ball_y)
     # main loop
+    playing = False
     quit_signal = False
     while not quit_signal:
         for event in pygame.event.get():
@@ -122,25 +134,75 @@ def main():
             RightPaddle.move_up()
         if pressed_keys[pygame.K_DOWN]:
             RightPaddle.move_down()
+        if pressed_keys[pygame.K_RETURN]:
+            playing = True
+            lplayer_score = 0
+            rplayer_score = 0
+            rally = 0 # number of exchanges between the players
+
+        if playing and (lplayer_score == 11 or rplayer_score == 11):
+            playing = False
+
 
         # ball bouncing
-        if MainBall.rect.left < 0 or MainBall.rect.right > Display.width:
-            MainBall.direction[0] = -MainBall.direction[0]
+        # ball goes slightly into the left and right walls but not trough
+        # the top and bottom walls
+        if MainBall.rect.left < -15 or MainBall.rect.right > Display.width+15:
+            if playing: # a point has been made, create a new ball
+                MainBall = Ball(Display.ball_x, Display.ball_y)
+                rally = 0
+                if MainBall.rect.left < -15:
+                    lplayer_score += 1
+                else:
+                    rplayer_score += 1
+            else:
+                MainBall.direction[0] = -MainBall.direction[0]
         if MainBall.rect.top < 0 or MainBall.rect.bottom > Display.height:
             MainBall.direction[1] = -MainBall.direction[1]
 
-        # if there's a ball-paddles collitions, the x-axis of the ball
+        # if there's a ball-paddles collition, the x-axis of the ball
         # is always inverted (the ball is sent back from where it came)
-        if MainBall.rect.collidelist(LeftPaddle.rectlist) != -1 or \
-           MainBall.rect.collidelist(RightPaddle.rectlist) != -1:
-            MainBall.direction[0] = -MainBall.direction[0]
+        if playing:
+            if MainBall.rect.collidelist(LeftPaddle.rectlist) != -1 or \
+               MainBall.rect.collidelist(RightPaddle.rectlist) != -1:
+                   rally += 1
+                   if rally%4 == 0: # every 4 exchanges, ball speed increases
+                       if MainBall.direction[0] > 0:
+                            MainBall.direction[0] += 1
+                       else:
+                            MainBall.direction[0] -= 1
+
+                   MainBall.direction[0] = -MainBall.direction[0]
+
+            # Different paddle angles
+            # The angles vary from top-bottom (higher angle),
+            # middle top-middle bottom (angle between middle and top)
+            # and middle (straight response)
+            if MainBall.rect.colliderect(LeftPaddle.rectlist[0]) or \
+               MainBall.rect.colliderect(RightPaddle.rectlist[0]):
+                    MainBall.direction[1] = -2
+            elif MainBall.rect.colliderect(LeftPaddle.rectlist[1]) or \
+                 MainBall.rect.colliderect(RightPaddle.rectlist[1]):
+                    MainBall.direction[1] = -1
+            elif MainBall.rect.colliderect(LeftPaddle.rectlist[2]) or \
+                 MainBall.rect.colliderect(RightPaddle.rectlist[2]):
+                    MainBall.direction[1] = 0
+            elif MainBall.rect.colliderect(LeftPaddle.rectlist[3]) or \
+                 MainBall.rect.colliderect(RightPaddle.rectlist[3]):
+                    MainBall.direction[1] = 1
+            elif MainBall.rect.colliderect(LeftPaddle.rectlist[4]) or \
+                 MainBall.rect.colliderect(RightPaddle.rectlist[4]):
+                     MainBall.direction[1] = 2
 
         # how to detect bottom - top collision?
 
         MainBall.move()
 
         draw_background(game_display)
-        draw_gameplay(game_display, LeftPaddle, RightPaddle, MainBall)
+        if playing:
+            draw_gameplay(game_display, LeftPaddle, RightPaddle, MainBall)
+        else:
+            draw_ball(game_display, MainBall)
         pygame.display.update() # renders the display
         game_clock.tick(60) # FPS
     pygame.quit()
