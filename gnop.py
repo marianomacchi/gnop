@@ -1,7 +1,6 @@
 #!/bin/python3
 
-""" This module implements a loose clone of pong (Atari, 1972)
-"""
+"""This module implements a loose clone of pong (Atari, 1972)."""
 
 __author__ = "Mariano Macchi"
 __license__ = "MIT"
@@ -18,10 +17,9 @@ from sys import exit
 
 import pygame
 
-# The display's size is taken from the original pong
-# It entails an aspect ration of 4:3
-DISPLAY_WIDTH = 858
-DISPLAY_HEIGHT = 525
+# The display's size entails an aspect ratio of 4:3
+DISPLAY_WIDTH = 454
+DISPLAY_HEIGHT = 262
 # Players' paddles starting coordinates
 LEFT_PADDLE_X = int(DISPLAY_WIDTH * 0.10)
 LEFT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
@@ -62,24 +60,18 @@ class Paddle:
         self.rectangles = [top, middletop, middle, middlebottom, bottom]
 
     # The paddle's movement is limited to mimic the same behaviour on the
-    # original game
+    # original game: the paddles cannot reach the top, nor the bottom
     def move_up(self):
-        # Moves all the paddle's rectangles upwards in place
-        if self.rectangles[0].top > 20: # the paddles cannot reach the top
-            self.rectangles[0].move_ip(0, -5)
-            self.rectangles[1].move_ip(0, -5)
-            self.rectangles[2].move_ip(0, -5)
-            self.rectangles[3].move_ip(0, -5)
-            self.rectangles[4].move_ip(0, -5)
+        """Move all the paddle's rectangles upwards, in place."""
+        if self.rectangles[0].top > 20:
+            for rectangle in self.rectangles:
+                rectangle.move_ip(0, -5)
 
     def move_down(self):
-        # Moves all the paddle's rectangles downwards in place
-        if self.rectangles[4].bottom < DISPLAY_HEIGHT - 20: # nor the bottom
-            self.rectangles[0].move_ip(0, 5)
-            self.rectangles[1].move_ip(0, 5)
-            self.rectangles[2].move_ip(0, 5)
-            self.rectangles[3].move_ip(0, 5)
-            self.rectangles[4].move_ip(0, 5)
+        """Move all the paddle's rectangles downwards, in place."""
+        if self.rectangles[4].bottom < DISPLAY_HEIGHT - 20:
+            for rectangle in self.rectangles:
+                rectangle.move_ip(0, 5)
 
 class Ball:
     height = 5
@@ -140,12 +132,12 @@ def handle_collisions(LeftPaddle, RightPaddle, MainBall, rally):
     # is made and the rally variable is reset.
     point = False
     # Paddle collision
-    collisions = (MainBall.rect.collidelist(LeftPaddle.rectlist),
-                  MainBall.rect.collidelist(RightPaddle.rectlist))
+    collisions = (MainBall.rect.collidelist(LeftPaddle.rectangles),
+                  MainBall.rect.collidelist(RightPaddle.rectangles))
     for rect in collisions:
         if rect != -1:
            MainBall.direction[0] = -MainBall.direction[0]
-           MainBall.direction[1] = Paddle.returning_angles[rect]
+           MainBall.direction[1] = Paddle.RETURNING_ANGLES[rect]
            rally += 1
            if rally%3 == 0: # Every 3 exchanges ball speed increases
                if MainBall.direction[0] > 0:
@@ -185,16 +177,16 @@ def draw_gameplay(game_display, LeftPaddle, RightPaddle, Ball, playing):
     # If a game is not being played, it only draws the ball.
     # 0 fills the rectangles, 1 leaves them empty.
     if playing:
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectlist[0], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectlist[1], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectlist[2], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectlist[3], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectlist[4], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectlist[0], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectlist[1], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectlist[2], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectlist[3], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectlist[4], 0)
+        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[0], 0)
+        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[1], 0)
+        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[2], 0)
+        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[3], 0)
+        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[4], 0)
+        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[0], 0)
+        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[1], 0)
+        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[2], 0)
+        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[3], 0)
+        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[4], 0)
     pygame.draw.rect(game_display, WHITE, Ball, 0)
 
 def main():
