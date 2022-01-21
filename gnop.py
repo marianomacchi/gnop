@@ -1,66 +1,85 @@
 #!/bin/python3
 
+""" This module implements a loose clone of pong (Atari, 1972)
+"""
+
+__author__ = "Mariano Macchi"
+__license__ = "MIT"
+__version__ = "1.0.0"
+
 # TODO:
 # 1) Add three additional rectangles and returning angles to the paddles
 # 2) Add sound
 # 3) Use pygame fonts and text to show scorings
+# 4) Move the players' score on a different location player != paddle
 
-import pygame
 from random import choice, randint
 from sys import exit
 
-DISPLAY_WIDTH = 450 # 4:3 Ratio
-DISPLAY_HEIGHT = 350
-LEFT_PADDLE_X = int(DISPLAY_WIDTH * 0.10) # Paddles' starting coordinates
+import pygame
+
+# The display's size is taken from the original pong
+# It entails an aspect ration of 4:3
+DISPLAY_WIDTH = 858
+DISPLAY_HEIGHT = 525
+# Players' paddles starting coordinates
+LEFT_PADDLE_X = int(DISPLAY_WIDTH * 0.10)
 LEFT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
 RIGHT_PADDLE_X = int(DISPLAY_WIDTH * 0.90)
 RIGHT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
-DISPLAY_CENTER = DISPLAY_WIDTH//2
+DISPLAY_CENTER = DISPLAY_WIDTH // 2
 BLACK = (0 , 0, 0) # RGB
 WHITE = (255 , 255, 255)
 
 class Paddle:
-    height = 27
-    width = 5
-    returning_angles = {
+    HEIGHT = 27
+    WIDTH = 5
+    RETURNING_ANGLES = {
             0 : -2, # top
             1 : -1, # middletop
             2 : 0, # middle
             3 : 1, # middlebottom
             4 : 2 # bottom
     }
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.score = 0
-        # A paddle is formed by five, contiguous, rectangles to allow
-        # for different resulting angles when hitting the ball
-        top = pygame.Rect(self.x, self.y-2*(Paddle.height//5),
-                          Paddle.width, Paddle.height//5)
-        middletop = pygame.Rect(self.x, self.y-(Paddle.height//5),
-                                Paddle.width, Paddle.height//5)
-        middle = pygame.Rect(self.x, self.y,  Paddle.width, Paddle.height//5)
-        middlebottom = pygame.Rect(self.x, self.y+(Paddle.height//5),
-                                   Paddle.width, Paddle.height//5)
-        bottom = pygame.Rect(self.x, self.y+2*(Paddle.height//5),
-                             Paddle.width, Paddle.height//5)
-        self.rectlist = [top, middletop, middle, middlebottom, bottom]
+        # A paddle is formed by five, contiguous, rectangles whose coordinates
+        # are calculated from the paddle's starting coordinates
+        # The use of several rectangles allows for different resulting angles
+        # when hitting the ball
+        top = pygame.Rect(self.x, self.y - (2 * (Paddle.HEIGHT // 5)),
+                          Paddle.WIDTH, Paddle.HEIGHT // 5)
+        middletop = pygame.Rect(self.x, self.y - (Paddle.HEIGHT // 5),
+                                Paddle.WIDTH, Paddle.HEIGHT // 5)
+        middle = pygame.Rect(self.x, self.y,  Paddle.WIDTH, Paddle.HEIGHT // 5)
+        middlebottom = pygame.Rect(self.x, self.y + (Paddle.HEIGHT // 5),
+                                   Paddle.WIDTH, Paddle.HEIGHT // 5)
+        bottom = pygame.Rect(self.x, self.y + (2 * (Paddle.HEIGHT // 5)),
+                             Paddle.WIDTH, Paddle.HEIGHT // 5)
+        self.rectangles = [top, middletop, middle, middlebottom, bottom]
+
+    # The paddle's movement is limited to mimic the same behaviour on the
+    # original game
     def move_up(self):
-        # Move all the paddle's rectangles upwards in place.
-        if self.rectlist[0].top > 20: # the paddles cannot reach the top
-            self.rectlist[0].move_ip(0, -5)
-            self.rectlist[1].move_ip(0, -5)
-            self.rectlist[2].move_ip(0, -5)
-            self.rectlist[3].move_ip(0, -5)
-            self.rectlist[4].move_ip(0, -5)
+        # Moves all the paddle's rectangles upwards in place
+        if self.rectangles[0].top > 20: # the paddles cannot reach the top
+            self.rectangles[0].move_ip(0, -5)
+            self.rectangles[1].move_ip(0, -5)
+            self.rectangles[2].move_ip(0, -5)
+            self.rectangles[3].move_ip(0, -5)
+            self.rectangles[4].move_ip(0, -5)
+
     def move_down(self):
-        # Move all the paddle's rectangles downwards in place.
-        if self.rectlist[4].bottom < DISPLAY_HEIGHT-20: # nor the bottom
-            self.rectlist[0].move_ip(0, 5)
-            self.rectlist[1].move_ip(0, 5)
-            self.rectlist[2].move_ip(0, 5)
-            self.rectlist[3].move_ip(0, 5)
-            self.rectlist[4].move_ip(0, 5)
+        # Moves all the paddle's rectangles downwards in place
+        if self.rectangles[4].bottom < DISPLAY_HEIGHT - 20: # nor the bottom
+            self.rectangles[0].move_ip(0, 5)
+            self.rectangles[1].move_ip(0, 5)
+            self.rectangles[2].move_ip(0, 5)
+            self.rectangles[3].move_ip(0, 5)
+            self.rectangles[4].move_ip(0, 5)
 
 class Ball:
     height = 5
