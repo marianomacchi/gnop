@@ -1,6 +1,18 @@
 #!/bin/python3
 
-"""This module implements a loose clone of pong (Atari, 1972)."""
+"""Loose pong clone (Atari, 1972)
+
+This script implements a loose clone of Atari's original pong.
+
+To run the game simply run the script and then - to start a game - press enter.
+
+    Player 1 moves using the WASD keys
+    Player 2 moves using the directional keys
+
+The game ends when one of the players reaches 10 points.
+
+This script requires `pygame` to be installed.
+"""
 
 __author__ = "Mariano Macchi"
 __license__ = "MIT"
