@@ -40,6 +40,7 @@ RIGHT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
 DISPLAY_CENTER = DISPLAY_WIDTH // 2
 BLACK = (0 , 0, 0) # RGB
 WHITE = (255 , 255, 255)
+MAX_SCORE = 10
 
 class Paddle:
     HEIGHT = 27
@@ -116,6 +117,15 @@ class Ball:
         """Move the ball along its current direction."""
         self.rect.move_ip(self.direction[0], self.direction[1])
 
+    def get_after_point_orientation(self):
+        """Return a new orientation after one of the players score"""
+        # The new orientation is towards the player that was scored upon
+        if self.rect.left < 0:
+            ball_orientation = -1 # right to left
+        else:
+            ball_orientation = 1 # left to right
+        return ball_orientation
+
     def bounce(self):
         """Make the ball bounce against the screen's 'walls'"""
         if self.rect.left < 0 or self.rect.right > DISPLAY_WIDTH:
@@ -163,18 +173,12 @@ def handle_collisions(LeftPaddle, RightPaddle, MainBall, rally):
         MainBall.direction[1] = -MainBall.direction[1]
     return point, rally
 
-def update_score(MainBall, LeftPaddle, RightPaddle):
-    # Updates the players' score when a point is made and returns the
-    # ball had when the point was made.
-    # TODO: refactor this class and check whether the scoring makes sense:
-    # shouldn't it be the contrary? i.e. the score is kept in reverse ?
-    if MainBall.rect.left < 0:
-        LeftPaddle.score += 1
-        ball_orientation = -1 # left
+def update_score(ball, left_paddle, right_paddle):
+    """Update the current players' score after a point is made"""
+    if ball.rect.left < 0:
+        right_paddle.score += 1
     else:
-        RightPaddle.score += 1
-        ball_orientation = 1 # right
-    return ball_orientation
+        left_paddle.score += 1
 
 def draw_background(game_display):
     # Fills the background and draws a central line.
@@ -208,10 +212,9 @@ def main():
     game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
     pygame.display.set_caption('gnop') # window title
     game_clock = pygame.time.Clock()
-    # Create the paddles and the ball
-    LeftPaddle = Paddle(LEFT_PADDLE_X, LEFT_PADDLE_Y)
-    RightPaddle = Paddle(RIGHT_PADDLE_X, RIGHT_PADDLE_Y)
-    MainBall = Ball()
+    left_paddle = Paddle(LEFT_PADDLE_X, LEFT_PADDLE_Y)
+    right_paddle = Paddle(RIGHT_PADDLE_X, RIGHT_PADDLE_Y)
+    ball = Ball()
     # Main loop
     playing = False
     quit_signal = False
@@ -224,28 +227,28 @@ def main():
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_RETURN]: # New game
             playing = True
-            LeftPaddle.score = 0
-            RightPaddle.score = 0
+            left_paddle.score = 0
+            right_paddle.score = 0
             rally = 0
-            MainBall = Ball()
-
+            ball = Ball()
         if playing:
-            handle_players_input(pressed_keys, LeftPaddle, RightPaddle)
-            point, rally = handle_collisions(LeftPaddle, RightPaddle, MainBall,
+            handle_players_input(pressed_keys, left_paddle, right_paddle)
+            point, rally = handle_collisions(left_paddle, right_paddle, ball,
                                              rally)
             if point:
-                ball_orientation = update_score(MainBall, LeftPaddle,
-                                                RightPaddle)
+                update_score(ball, left_paddle, right_paddle)
+                after_point_orientation = ball.get_after_point_orientation()
+                ball = Ball(after_point_orientation)
                 rally = 0
-                MainBall = Ball(ball_orientation)
-            if LeftPaddle.score == 11 or RightPaddle.score  == 11:
+            if left_paddle.score == MAX_SCORE or \
+            right_paddle.score  == MAX_SCORE:
                 playing = False
         else:
-            MainBall.bounce()
+            ball.bounce()
 
-        MainBall.move()
+        ball.move()
         draw_background(game_display)
-        draw_gameplay(game_display, LeftPaddle, RightPaddle, MainBall, playing)
+        draw_gameplay(game_display, left_paddle, right_paddle, ball, playing)
         pygame.display.update() # Renders the display
         game_clock.tick(60) # FPS
     pygame.quit()
