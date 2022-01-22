@@ -123,13 +123,6 @@ class Ball:
         if self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
                 self.direction[1] = -self.direction[1]
 
-def init():
-    # Initializes pygame and returns a titled game display.
-    pygame.init()
-    game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
-    pygame.display.set_caption('gnop') # display title
-    return game_display
-
 def handle_players_input(pressed_keys, LeftPaddle, RightPaddle):
     # Moves the paddles based on players' input
     if pressed_keys[pygame.K_w]: # Left paddle movements
@@ -173,6 +166,8 @@ def handle_collisions(LeftPaddle, RightPaddle, MainBall, rally):
 def update_score(MainBall, LeftPaddle, RightPaddle):
     # Updates the players' score when a point is made and returns the
     # ball had when the point was made.
+    # TODO: refactor this class and check whether the scoring makes sense:
+    # shouldn't it be the contrary? i.e. the score is kept in reverse ?
     if MainBall.rect.left < 0:
         LeftPaddle.score += 1
         ball_orientation = -1 # left
@@ -208,8 +203,10 @@ def draw_gameplay(game_display, LeftPaddle, RightPaddle, Ball, playing):
     pygame.draw.rect(game_display, WHITE, Ball, 0)
 
 def main():
-    # Initialize pygame
-    game_display = init()
+    """Initialize the game and keep track of the gameplay through a loop"""
+    pygame.init()
+    game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    pygame.display.set_caption('gnop') # window title
     game_clock = pygame.time.Clock()
     # Create the paddles and the ball
     LeftPaddle = Paddle(LEFT_PADDLE_X, LEFT_PADDLE_Y)
