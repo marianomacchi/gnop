@@ -86,32 +86,38 @@ class Paddle:
                 rectangle.move_ip(0, 5)
 
 class Ball:
-    height = 5
-    width = 5
-    x = DISPLAY_CENTER
+    HEIGHT = 5
+    WIDTH = 5
+    SPEED = 3 # direction along the x-axis
+    MIN_INCLINATION = -7 # direction along the y-axis
+    MAX_INCLINATION = 7
+
     def __init__(self, orientation=None, playing=False):
+        self.x = DISPLAY_CENTER
         self.y = randint(0, DISPLAY_HEIGHT)
-        self.rect = pygame.Rect(Ball.x, self.y, Ball.width, Ball.height)
-        # When a player gets scored to, the ball respawns towards his
-        # side until he manages to score a point or the game is lost.
-        # The optional parameter orientation is used to determine towards
-        # which side the ball respawns to. This paramater is optional because
-        # when a game is not being played, the ball randomly bounces around
-        # the screen.
+        self.rect = pygame.Rect(self.x, self.y, Ball.WIDTH, Ball.HEIGHT)
+        # The orientation (-1 or 1) indicates whether the ball moves left
+        # to right (1) or right to left (-1)
+        # During gameplay is set by the players hitting the ball
+        # It's also used to determine what direction (x, y) the ball is moving
         if orientation:
-            self.direction = [orientation * 4] # x-axis
+            self.direction = [orientation * Ball.SPEED] # x-axis
         else:
-            self.direction = [choice([-4, 4])]
-        self.direction.append(randint(-7, 7)) # y-axis
+            self.direction = [choice([-Ball.SPEED, Ball.SPEED])]
+        self.direction.append(randint(Ball.MIN_INCLINATION,
+            Ball.MAX_INCLINATION)) # y-axis
         if not playing:
             # Exclude straight lines so the ball can bounce around
             while self.direction[1] == 0:
-                self.direction[1] = randint(-7, 7)
+                self.direction[1] = randint(Ball.MIN_INCLINATION,
+                        Ball.MAX_INCLINATION)
+
     def move(self):
-        # Moves the ball along its current direction.
+        """Move the ball along its current direction."""
         self.rect.move_ip(self.direction[0], self.direction[1])
+
     def bounce(self):
-        # Makes the ball bounce against the screen's walls
+        """Make the ball bounce against the screen's 'walls'"""
         if self.rect.left < 0 or self.rect.right > DISPLAY_WIDTH:
                 self.direction[0] = -self.direction[0]
         if self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
