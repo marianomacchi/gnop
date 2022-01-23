@@ -37,9 +37,13 @@ LEFT_PADDLE_X = int(DISPLAY_WIDTH * 0.10)
 LEFT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
 RIGHT_PADDLE_X = int(DISPLAY_WIDTH * 0.90)
 RIGHT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
+# Game display defaults
 DISPLAY_CENTER = DISPLAY_WIDTH // 2
 BLACK = (0 , 0, 0) # RGB
 WHITE = (255 , 255, 255)
+CENTRAL_LINE_THICKNESS = 2
+LINE_SEGMENT_LENGTH = 13
+# Gameplay defaults
 MAX_SCORE = 10
 
 class Paddle:
@@ -133,16 +137,16 @@ class Ball:
         if self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
                 self.direction[1] = -self.direction[1]
 
-def handle_players_input(pressed_keys, LeftPaddle, RightPaddle):
-    # Moves the paddles based on players' input
+def handle_players_input(pressed_keys, left_paddle, right_paddle):
+    """Move the paddle according to players' input"""
     if pressed_keys[pygame.K_w]: # Left paddle movements
-        LeftPaddle.move_up()
+        left_paddle.move_up()
     if pressed_keys[pygame.K_s]:
-        LeftPaddle.move_down()
+        left_paddle.move_down()
     if pressed_keys[pygame.K_UP]: # Right paddle movements
-        RightPaddle.move_up()
+        right_paddle.move_up()
     if pressed_keys[pygame.K_DOWN]:
-        RightPaddle.move_down()
+        right_paddle.move_down()
 
 def handle_collisions(LeftPaddle, RightPaddle, MainBall, rally):
     # Handles the collisions of the Ball with the Paddles and with the Walls
@@ -181,30 +185,24 @@ def update_score(ball, left_paddle, right_paddle):
         left_paddle.score += 1
 
 def draw_background(game_display):
-    # Fills the background and draws a central line.
+    """Draw the black background and the central white line"""
     game_display.fill(BLACK)
-    for y in range(DISPLAY_HEIGHT+1):
-        # line segments are drawn from the top every 13 pixels
-        if y%13 == 0:
+    for y in range(DISPLAY_HEIGHT + 1):
+        # line segments are drawn from the top according a fixed length
+        if y % LINE_SEGMENT_LENGTH == 0:
             pygame.draw.line(game_display, WHITE, (DISPLAY_CENTER, y),
-                            (DISPLAY_CENTER, y+5), 2) # thick=2
+                            (DISPLAY_CENTER, y + 5), CENTRAL_LINE_THICKNESS)
 
-def draw_gameplay(game_display, LeftPaddle, RightPaddle, Ball, playing):
-    # Draws the paddles and the ball.
-    # If a game is not being played, it only draws the ball.
-    # 0 fills the rectangles, 1 leaves them empty.
+def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
+    """Draw the paddles and the ball"""
+    # If a game is not being played, it only draws the ball bouncing
+    # 0 fills the rectangles, 1 leaves them empty
     if playing:
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[0], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[1], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[2], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[3], 0)
-        pygame.draw.rect(game_display, WHITE, LeftPaddle.rectangles[4], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[0], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[1], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[2], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[3], 0)
-        pygame.draw.rect(game_display, WHITE, RightPaddle.rectangles[4], 0)
-    pygame.draw.rect(game_display, WHITE, Ball, 0)
+        for left_paddle_rectangle in left_paddle.rectangles:
+            pygame.draw.rect(game_display, WHITE, left_paddle_rectangle, 0)
+        for right_paddle_rectangle in right_paddle.rectangles:
+            pygame.draw.rect(game_display, WHITE, right_paddle_rectangle, 0)
+    pygame.draw.rect(game_display, WHITE, ball, 0)
 
 def main():
     """Initialize the game and keep track of the gameplay through a loop"""
