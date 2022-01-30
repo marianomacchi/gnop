@@ -37,24 +37,25 @@ RIGHT_PADDLE_X = int(DISPLAY_WIDTH * 0.90)
 RIGHT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
 # Game display defaults
 DISPLAY_CENTER = DISPLAY_WIDTH // 2
-BLACK = (0 , 0, 0) # RGB
-WHITE = (255 , 255, 255)
+BLACK = (0, 0, 0)  # RGB
+WHITE = (255, 255, 255)
 CENTRAL_LINE_THICKNESS = 2
 LINE_SEGMENT_LENGTH = 13
 # Gameplay defaults
 MAX_SCORE = 10
-LEFT_SIDE_WALL = 1 # Flag
+LEFT_SIDE_WALL = 1  # Flag
 RIGHT_SIDE_WALL = 2
+
 
 class Paddle:
     HEIGHT = 27
     WIDTH = 5
     RETURNING_ANGLES = {
-            0 : -2, # top
-            1 : -1, # middletop
-            2 : 0, # middle
-            3 : 1, # middlebottom
-            4 : 2 # bottom
+        0: -2,  # top
+        1: -1,  # middletop
+        2: 0,  # middle
+        3: 1,  # middlebottom
+        4: 2,  # bottom
     }
 
     def __init__(self, x, y):
@@ -65,15 +66,25 @@ class Paddle:
         # are calculated from the paddle's starting coordinates
         # The use of several rectangles allows for different resulting angles
         # when hitting the ball
-        top = pygame.Rect(self.x, self.y - (2 * (Paddle.HEIGHT // 5)),
-                          Paddle.WIDTH, Paddle.HEIGHT // 5)
-        middletop = pygame.Rect(self.x, self.y - (Paddle.HEIGHT // 5),
-                                Paddle.WIDTH, Paddle.HEIGHT // 5)
-        middle = pygame.Rect(self.x, self.y,  Paddle.WIDTH, Paddle.HEIGHT // 5)
-        middlebottom = pygame.Rect(self.x, self.y + (Paddle.HEIGHT // 5),
-                                   Paddle.WIDTH, Paddle.HEIGHT // 5)
-        bottom = pygame.Rect(self.x, self.y + (2 * (Paddle.HEIGHT // 5)),
-                             Paddle.WIDTH, Paddle.HEIGHT // 5)
+        top = pygame.Rect(
+            self.x,
+            self.y - (2 * (Paddle.HEIGHT // 5)),
+            Paddle.WIDTH,
+            Paddle.HEIGHT // 5,
+        )
+        middletop = pygame.Rect(
+            self.x, self.y - (Paddle.HEIGHT // 5), Paddle.WIDTH, Paddle.HEIGHT // 5
+        )
+        middle = pygame.Rect(self.x, self.y, Paddle.WIDTH, Paddle.HEIGHT // 5)
+        middlebottom = pygame.Rect(
+            self.x, self.y + (Paddle.HEIGHT // 5), Paddle.WIDTH, Paddle.HEIGHT // 5
+        )
+        bottom = pygame.Rect(
+            self.x,
+            self.y + (2 * (Paddle.HEIGHT // 5)),
+            Paddle.WIDTH,
+            Paddle.HEIGHT // 5,
+        )
         self.rectangles = [top, middletop, middle, middlebottom, bottom]
 
     # The paddle's movement is limited to mimic the same behaviour on the
@@ -90,11 +101,12 @@ class Paddle:
             for rectangle in self.rectangles:
                 rectangle.move_ip(0, 5)
 
+
 class Ball:
     HEIGHT = 5
     WIDTH = 5
-    SPEED = 3 # direction along the x-axis
-    MIN_INCLINATION = Paddle.RETURNING_ANGLES[0] # direction along the y-axis
+    SPEED = 3  # direction along the x-axis
+    MIN_INCLINATION = Paddle.RETURNING_ANGLES[0]  # direction along the y-axis
     MAX_INCLINATION = Paddle.RETURNING_ANGLES[4]
 
     def __init__(self, orientation=None, playing=False):
@@ -106,16 +118,16 @@ class Ball:
         # During gameplay is set by the players hitting the ball
         # It's also used to determine what direction (x, y) the ball is moving
         if orientation:
-            self.direction = [orientation * Ball.SPEED] # x-axis
+            self.direction = [orientation * Ball.SPEED]  # x-axis
         else:
             self.direction = [choice([-Ball.SPEED, Ball.SPEED])]
-        self.direction.append(randint(Ball.MIN_INCLINATION,
-            Ball.MAX_INCLINATION)) # y-axis
+        self.direction.append(
+            randint(Ball.MIN_INCLINATION, Ball.MAX_INCLINATION)
+        )  # y-axis
         if not playing:
             # Exclude straight lines so the ball can bounce around
             while self.direction[1] == 0:
-                self.direction[1] = randint(Ball.MIN_INCLINATION,
-                        Ball.MAX_INCLINATION)
+                self.direction[1] = randint(Ball.MIN_INCLINATION, Ball.MAX_INCLINATION)
 
     def move(self):
         """Move the ball along its current direction."""
@@ -130,14 +142,16 @@ class Ball:
 
     def bounce_from_paddle(self, left_paddle, right_paddle, rally):
         """Make the ball bounce from the paddles"""
-        paddle_collisions = (self.rect.collidelist(left_paddle.rectangles),
-                self.rect.collidelist(right_paddle.rectangles))
+        paddle_collisions = (
+            self.rect.collidelist(left_paddle.rectangles),
+            self.rect.collidelist(right_paddle.rectangles),
+        )
         for rect in paddle_collisions:
             if rect != -1:
                 self.direction[0] = -self.direction[0]
                 self.direction[1] = Paddle.RETURNING_ANGLES[rect]
                 rally += 1
-                if rally%3 == 0: # Every three hits the ball moves faster
+                if rally % 3 == 0:  # Every three hits the ball moves faster
                     self.increase_speed()
         return rally
 
@@ -169,16 +183,18 @@ class Ball:
         else:
             self.direction[0] -= 1
 
+
 def handle_players_input(pressed_keys, left_paddle, right_paddle):
     """Move the paddle according to players' input"""
-    if pressed_keys[pygame.K_w]: # Left paddle movements
+    if pressed_keys[pygame.K_w]:  # Left paddle movements
         left_paddle.move_up()
     if pressed_keys[pygame.K_s]:
         left_paddle.move_down()
-    if pressed_keys[pygame.K_UP]: # Right paddle movements
+    if pressed_keys[pygame.K_UP]:  # Right paddle movements
         right_paddle.move_up()
     if pressed_keys[pygame.K_DOWN]:
         right_paddle.move_down()
+
 
 def update_score(side_wall_hit, left_paddle, right_paddle):
     """Update the current players' score after a point is made"""
@@ -186,6 +202,7 @@ def update_score(side_wall_hit, left_paddle, right_paddle):
         right_paddle.score += 1
     elif side_wall_hit == RIGHT_SIDE_WALL:
         left_paddle.score += 1
+
 
 def get_after_point_orientation(ball):
     """Return a new orientation after one of the players score"""
@@ -196,14 +213,21 @@ def get_after_point_orientation(ball):
     ball_orientation = -1 if ball.rect.left < 0 else 1
     return ball_orientation
 
+
 def draw_background(game_display):
     """Draw the black background and the central white line"""
     game_display.fill(BLACK)
     for y in range(DISPLAY_HEIGHT + 1):
         # line segments are drawn from the top according a fixed length
         if y % LINE_SEGMENT_LENGTH == 0:
-            pygame.draw.line(game_display, WHITE, (DISPLAY_CENTER, y),
-                            (DISPLAY_CENTER, y + 5), CENTRAL_LINE_THICKNESS)
+            pygame.draw.line(
+                game_display,
+                WHITE,
+                (DISPLAY_CENTER, y),
+                (DISPLAY_CENTER, y + 5),
+                CENTRAL_LINE_THICKNESS,
+            )
+
 
 def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
     """Draw the paddles and the ball"""
@@ -216,11 +240,12 @@ def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
             pygame.draw.rect(game_display, WHITE, right_paddle_rectangle, 0)
     pygame.draw.rect(game_display, WHITE, ball, 0)
 
+
 def main():
     """Initialize the game and keep track of the gameplay through a loop"""
     pygame.init()
     game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
-    pygame.display.set_caption('gnop') # window title
+    pygame.display.set_caption("gnop")  # window title
     game_clock = pygame.time.Clock()
     left_paddle = Paddle(LEFT_PADDLE_X, LEFT_PADDLE_Y)
     right_paddle = Paddle(RIGHT_PADDLE_X, RIGHT_PADDLE_Y)
@@ -235,7 +260,7 @@ def main():
                 quit_signal = True
         # Get input
         pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[pygame.K_RETURN]: # New game
+        if pressed_keys[pygame.K_RETURN]:  # New game
             playing = True
             left_paddle.score = 0
             right_paddle.score = 0
@@ -243,15 +268,13 @@ def main():
             ball = Ball()
         if playing:
             handle_players_input(pressed_keys, left_paddle, right_paddle)
-            side_wall_hit = ball.handle_collisions(left_paddle,
-                    right_paddle, rally)
+            side_wall_hit = ball.handle_collisions(left_paddle, right_paddle, rally)
             if side_wall_hit:
                 update_score(side_wall_hit, left_paddle, right_paddle)
                 after_point_orientation = get_after_point_orientation(ball)
                 ball = Ball(after_point_orientation)
                 rally = 0
-            if left_paddle.score == MAX_SCORE or \
-                    right_paddle.score  == MAX_SCORE:
+            if left_paddle.score == MAX_SCORE or right_paddle.score == MAX_SCORE:
                 playing = False
         else:
             ball.bounce_from_walls()
@@ -259,10 +282,11 @@ def main():
         ball.move()
         draw_background(game_display)
         draw_gameplay(game_display, left_paddle, right_paddle, ball, playing)
-        pygame.display.update() # Renders the display
-        game_clock.tick(60) # FPS
+        pygame.display.update()  # Renders the display
+        game_clock.tick(60)  # FPS
     pygame.quit()
     exit()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
