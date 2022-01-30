@@ -19,7 +19,6 @@ __license__ = "MIT"
 __version__ = "1.0.0"
 
 # TODO:
-# 2) Add sound
 # 3) Use pygame fonts and text to show scorings
 
 from random import choice, randint
@@ -148,6 +147,8 @@ class Ball:
         )
         for rect in paddle_collisions:
             if rect != -1:
+                pygame.mixer.music.load('beep-02.wav')
+                pygame.mixer.music.play()
                 self.direction[0] = -self.direction[0]
                 self.direction[1] = Paddle.RETURNING_ANGLES[rect]
                 rally += 1
@@ -244,6 +245,8 @@ def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
 def main():
     """Initialize the game and keep track of the gameplay through a loop"""
     pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.set_volume(0.5)
     game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
     pygame.display.set_caption("gnop")  # window title
     game_clock = pygame.time.Clock()
@@ -270,6 +273,8 @@ def main():
             handle_players_input(pressed_keys, left_paddle, right_paddle)
             side_wall_hit = ball.handle_collisions(left_paddle, right_paddle, rally)
             if side_wall_hit:
+                pygame.mixer.music.load('beep-03.wav')
+                pygame.mixer.music.play()
                 update_score(side_wall_hit, left_paddle, right_paddle)
                 after_point_orientation = get_after_point_orientation(ball)
                 ball = Ball(after_point_orientation)
