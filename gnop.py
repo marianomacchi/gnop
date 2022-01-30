@@ -19,10 +19,8 @@ __license__ = "MIT"
 __version__ = "1.0.0"
 
 # TODO:
-# 1) Add three additional rectangles and returning angles to the paddles
 # 2) Add sound
 # 3) Use pygame fonts and text to show scorings
-# 4) Move the players' score on a different location player != paddle
 
 from random import choice, randint
 from sys import exit
@@ -45,6 +43,8 @@ CENTRAL_LINE_THICKNESS = 2
 LINE_SEGMENT_LENGTH = 13
 # Gameplay defaults
 MAX_SCORE = 10
+LEFT_SIDE_WALL = 1 # Flag
+RIGHT_SIDE_WALL = 2
 
 class Paddle:
     HEIGHT = 27
@@ -94,8 +94,8 @@ class Ball:
     HEIGHT = 5
     WIDTH = 5
     SPEED = 3 # direction along the x-axis
-    MIN_INCLINATION = -7 # direction along the y-axis
-    MAX_INCLINATION = 7
+    MIN_INCLINATION = Paddle.RETURNING_ANGLES[0] # direction along the y-axis
+    MAX_INCLINATION = Paddle.RETURNING_ANGLES[4]
 
     def __init__(self, orientation=None, playing=False):
         self.x = DISPLAY_CENTER
@@ -121,21 +121,53 @@ class Ball:
         """Move the ball along its current direction."""
         self.rect.move_ip(self.direction[0], self.direction[1])
 
-    def get_after_point_orientation(self):
-        """Return a new orientation after one of the players score"""
-        # The new orientation is towards the player that was scored upon
-        if self.rect.left < 0:
-            ball_orientation = -1 # right to left
-        else:
-            ball_orientation = 1 # left to right
-        return ball_orientation
-
-    def bounce(self):
-        """Make the ball bounce against the screen's 'walls'"""
+    def bounce_around(self):
+        """Make the ball bounce around against the screen's 'walls'"""
         if self.rect.left < 0 or self.rect.right > DISPLAY_WIDTH:
-                self.direction[0] = -self.direction[0]
+            self.direction[0] = -self.direction[0]
         if self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
-                self.direction[1] = -self.direction[1]
+            self.direction[1] = -self.direction[1]
+
+    def bounce_from_paddle(self, left_paddle, right_paddle, rally):
+        """Make the ball bounce from the paddles"""
+        paddle_collisions = (self.rect.collidelist(left_paddle.rectangles),
+                self.rect.collidelist(right_paddle.rectangles))
+        for rect in paddle_collisions:
+            if rect != -1:
+                self.direction[0] = -self.direction[0]
+                self.direction[1] = Paddle.RETURNING_ANGLES[rect]
+                rally += 1
+                if rally%3 == 0: # Every three hits the ball moves faster
+                    self.increase_speed()
+        return rally
+
+    def bounce_from_walls(self):
+        """Make the ball bounce around against the screen's 'walls'
+        Return a flag to indicate if and which of the side 'walls' was hit
+        """
+        side_wall_hit = None
+        if self.rect.left < 0 or self.rect.right > DISPLAY_WIDTH:
+            self.direction[0] = -self.direction[0]
+            if self.rect.left < 0:
+                side_wall_hit = LEFT_SIDE_WALL
+            else:
+                side_wall_hit = RIGHT_SIDE_WALL
+        elif self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
+            self.direction[1] = -self.direction[1]
+        return side_wall_hit
+
+    def handle_collisions(self, left_paddle, right_paddle, rally):
+        """Handle the ball collisions againts the paddles and the 'walls'"""
+        side_wall_hit = self.bounce_from_walls()
+        self.bounce_from_paddle(left_paddle, right_paddle, rally)
+        return side_wall_hit
+
+    def increase_speed(self):
+        """Increase the ball's speed along its current direction"""
+        if self.direction[0] > 0:
+            self.direction[0] += 1
+        else:
+            self.direction[0] -= 1
 
 def handle_players_input(pressed_keys, left_paddle, right_paddle):
     """Move the paddle according to players' input"""
@@ -148,41 +180,21 @@ def handle_players_input(pressed_keys, left_paddle, right_paddle):
     if pressed_keys[pygame.K_DOWN]:
         right_paddle.move_down()
 
-def handle_collisions(LeftPaddle, RightPaddle, MainBall, rally):
-    # Handles the collisions of the Ball with the Paddles and with the Walls
-    # If the ball hits either of the two paddles, the number of consecutive
-    # exchanges within a point (rally) increases, and so does the ball's speed
-    # every 3 consecutive exchanges.
-    # If the ball hits either the left or the right side of the screen, a point
-    # is made and the rally variable is reset.
-    point = False
-    # Paddle collision
-    collisions = (MainBall.rect.collidelist(LeftPaddle.rectangles),
-                  MainBall.rect.collidelist(RightPaddle.rectangles))
-    for rect in collisions:
-        if rect != -1:
-           MainBall.direction[0] = -MainBall.direction[0]
-           MainBall.direction[1] = Paddle.RETURNING_ANGLES[rect]
-           rally += 1
-           if rally%3 == 0: # Every 3 exchanges ball speed increases
-               if MainBall.direction[0] > 0:
-                    MainBall.direction[0] += 1
-               else:
-                    MainBall.direction[0] -= 1
-    # Wall collision
-    if MainBall.rect.left < -15 or MainBall.rect.right > DISPLAY_WIDTH+15:
-        point = True
-        rally = 0
-    if MainBall.rect.top < 0 or MainBall.rect.bottom > DISPLAY_HEIGHT:
-        MainBall.direction[1] = -MainBall.direction[1]
-    return point, rally
-
-def update_score(ball, left_paddle, right_paddle):
+def update_score(side_wall_hit, left_paddle, right_paddle):
     """Update the current players' score after a point is made"""
-    if ball.rect.left < 0:
+    if side_wall_hit == LEFT_SIDE_WALL:
         right_paddle.score += 1
-    else:
+    elif side_wall_hit == RIGHT_SIDE_WALL:
         left_paddle.score += 1
+
+def get_after_point_orientation(ball):
+    """Return a new orientation after one of the players score"""
+    # The new orientation is towards the player that was scored upon
+    # The new orientation can be either be -1 or 1 where
+    # -1 = right to left
+    #  1 = left to right
+    ball_orientation = -1 if ball.rect.left < 0 else 1
+    return ball_orientation
 
 def draw_background(game_display):
     """Draw the black background and the central white line"""
@@ -231,18 +243,18 @@ def main():
             ball = Ball()
         if playing:
             handle_players_input(pressed_keys, left_paddle, right_paddle)
-            point, rally = handle_collisions(left_paddle, right_paddle, ball,
-                                             rally)
-            if point:
-                update_score(ball, left_paddle, right_paddle)
-                after_point_orientation = ball.get_after_point_orientation()
+            side_wall_hit = ball.handle_collisions(left_paddle,
+                    right_paddle, rally)
+            if side_wall_hit:
+                update_score(side_wall_hit, left_paddle, right_paddle)
+                after_point_orientation = get_after_point_orientation(ball)
                 ball = Ball(after_point_orientation)
                 rally = 0
             if left_paddle.score == MAX_SCORE or \
-            right_paddle.score  == MAX_SCORE:
+                    right_paddle.score  == MAX_SCORE:
                 playing = False
         else:
-            ball.bounce()
+            ball.bounce_from_walls()
 
         ball.move()
         draw_background(game_display)
