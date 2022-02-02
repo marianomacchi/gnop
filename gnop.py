@@ -19,14 +19,14 @@ __license__ = "MIT"
 __version__ = "1.0.0"
 
 # TODO:
-# 3) Use pygame fonts and text to show scorings
+# 1) make the display size a valid parameter e.g. python gnop -s 800 600
 
 from random import choice, randint
 from sys import exit
 
 import pygame
 
-# The display's size entails an aspect ratio of 4:3
+# The default display's size entails an aspect ratio of 4:3
 DISPLAY_WIDTH = 454
 DISPLAY_HEIGHT = 262
 # Players' paddles starting coordinates
@@ -40,15 +40,17 @@ BLACK = (0, 0, 0)  # RGB
 WHITE = (255, 255, 255)
 CENTRAL_LINE_THICKNESS = 2
 LINE_SEGMENT_LENGTH = 13
+FONT_SIZE = DISPLAY_HEIGHT // 10
 # Gameplay defaults
 MAX_SCORE = 10
 LEFT_SIDE_WALL = 1  # Flag
 RIGHT_SIDE_WALL = 2
+RALLY_SPEEDUP = 5
 
 
 class Paddle:
-    HEIGHT = 27
-    WIDTH = 5
+    HEIGHT = DISPLAY_HEIGHT // 8
+    WIDTH = DISPLAY_WIDTH // 100
     RETURNING_ANGLES = {
         0: -2,  # top
         1: -1,  # middletop
@@ -90,21 +92,21 @@ class Paddle:
     # original game: the paddles cannot reach the top, nor the bottom
     def move_up(self):
         """Move all the paddle's rectangles upwards, in place."""
-        if self.rectangles[0].top > 20:
+        if self.rectangles[0].top > DISPLAY_HEIGHT // 20:
             for rectangle in self.rectangles:
-                rectangle.move_ip(0, -5)
+                rectangle.move_ip(0, -DISPLAY_HEIGHT // 50)
 
     def move_down(self):
         """Move all the paddle's rectangles downwards, in place."""
-        if self.rectangles[4].bottom < DISPLAY_HEIGHT - 20:
+        if self.rectangles[4].bottom < DISPLAY_HEIGHT - DISPLAY_HEIGHT // 20:
             for rectangle in self.rectangles:
-                rectangle.move_ip(0, 5)
+                rectangle.move_ip(0, DISPLAY_HEIGHT // 50)
 
 
 class Ball:
-    HEIGHT = 5
-    WIDTH = 5
-    SPEED = 3  # direction along the x-axis
+    HEIGHT = DISPLAY_HEIGHT // 50
+    WIDTH = DISPLAY_HEIGHT // 50
+    SPEED = DISPLAY_WIDTH // 150  # direction along the x-axis
     MIN_INCLINATION = Paddle.RETURNING_ANGLES[0]  # direction along the y-axis
     MAX_INCLINATION = Paddle.RETURNING_ANGLES[4]
 
@@ -147,12 +149,14 @@ class Ball:
         )
         for rect in paddle_collisions:
             if rect != -1:
-                pygame.mixer.music.load('beep-02.wav')
+                pygame.mixer.music.load("beep-02.wav")
                 pygame.mixer.music.play()
                 self.direction[0] = -self.direction[0]
                 self.direction[1] = Paddle.RETURNING_ANGLES[rect]
                 rally += 1
-                if rally % 3 == 0:  # Every three hits the ball moves faster
+                if (
+                    rally % RALLY_SPEEDUP == 0
+                ):  # Ball speed increases when the number of exchanges
                     self.increase_speed()
         return rally
 
@@ -174,15 +178,15 @@ class Ball:
     def handle_collisions(self, left_paddle, right_paddle, rally):
         """Handle the ball collisions againts the paddles and the 'walls'"""
         side_wall_hit = self.bounce_from_walls()
-        self.bounce_from_paddle(left_paddle, right_paddle, rally)
-        return side_wall_hit
+        rally = self.bounce_from_paddle(left_paddle, right_paddle, rally)
+        return side_wall_hit, rally
 
     def increase_speed(self):
         """Increase the ball's speed along its current direction"""
         if self.direction[0] > 0:
-            self.direction[0] += 1
+            self.direction[0] += self.SPEED // 2
         else:
-            self.direction[0] -= 1
+            self.direction[0] -= self.SPEED // 2
 
 
 def handle_players_input(pressed_keys, left_paddle, right_paddle):
@@ -247,6 +251,7 @@ def main():
     pygame.init()
     pygame.mixer.init()
     pygame.mixer.music.set_volume(0.5)
+    game_font = pygame.freetype.Font("bit5x3.ttf", size=FONT_SIZE)
     game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
     pygame.display.set_caption("gnop")  # window title
     game_clock = pygame.time.Clock()
@@ -256,7 +261,26 @@ def main():
     # Main loop
     playing = False
     quit_signal = False
+
     while not quit_signal:
+
+        if not playing:
+            # Print a quick how to play
+            game_font.render_to(game_display, (0, 0), "WASD", WHITE)
+            # To print "ARROWS" right-aligned, the width of a rectangle holding this text is used as a reference
+            # Along the same line, the average scaled size (in pixels) of the used font is used to keep "Enter: Start"
+            # within the game's display
+            arrows_text_width = game_font.get_rect("ARROWS", size=FONT_SIZE).size[0]
+            game_font.render_to(
+                game_display, (DISPLAY_WIDTH - arrows_text_width, 0), "ARROWS", WHITE
+            )
+            game_font.render_to(
+                game_display,
+                (0, DISPLAY_HEIGHT - game_font.get_sized_height()),
+                "Enter: Start",
+                WHITE,
+            )
+
         for event in pygame.event.get():
             print(event)
             if event.type == pygame.QUIT:
@@ -270,10 +294,23 @@ def main():
             rally = 0
             ball = Ball()
         if playing:
+            game_font.render_to(game_display, (0, 0), str(left_paddle.score), WHITE)
+            # To print the right player's score right-aligned, the same approach as for the "ARROWS" text is used
+            right_score_text_width = game_font.get_rect(
+                str(right_paddle.score), size=FONT_SIZE
+            ).size[0]
+            game_font.render_to(
+                game_display,
+                (DISPLAY_WIDTH - right_score_text_width, 0),
+                str(right_paddle.score),
+                WHITE,
+            )
             handle_players_input(pressed_keys, left_paddle, right_paddle)
-            side_wall_hit = ball.handle_collisions(left_paddle, right_paddle, rally)
+            side_wall_hit, rally = ball.handle_collisions(
+                left_paddle, right_paddle, rally
+            )
             if side_wall_hit:
-                pygame.mixer.music.load('beep-03.wav')
+                pygame.mixer.music.load("beep-03.wav")
                 pygame.mixer.music.play()
                 update_score(side_wall_hit, left_paddle, right_paddle)
                 after_point_orientation = get_after_point_orientation(ball)
@@ -284,10 +321,11 @@ def main():
         else:
             ball.bounce_from_walls()
 
+        pygame.display.update()  # Renders the display
+
         ball.move()
         draw_background(game_display)
         draw_gameplay(game_display, left_paddle, right_paddle, ball, playing)
-        pygame.display.update()  # Renders the display
         game_clock.tick(60)  # FPS
     pygame.quit()
     exit()
