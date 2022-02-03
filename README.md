@@ -26,7 +26,7 @@ python3 gnop.py
 
 ## License
 
-Released under MIT, see LICENSE.md for more information.
+Released under MIT License, see LICENSE.md for more information.
 
 ## Acknowledgments
 
