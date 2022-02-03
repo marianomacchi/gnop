@@ -1,3 +1,35 @@
 # gnop
 
-gnop is a simple pong clone developed purely for learning purposes.
+Simple and _loose_ clone of Atari's Pong (1972), developed purely for fun as a little game design experiment.
+
+## Installation
+
+Ensure that pygame is installed, e.g. using
+
+```
+pip install --user pygame
+```
+
+then
+
+```
+git clone https://github.com/marianomacchi/gnop.git
+```
+
+or download the ZIP file.
+
+## Usage
+
+```
+python3 gnop.py
+```
+
+## License
+
+Released under MIT, see LICENSE.md for more information.
+
+## Acknowledgments
+
+Sound files by [SoundJay.com](SoundJay.com)
+
+Font by [mattlag.com](mattlag.com)
