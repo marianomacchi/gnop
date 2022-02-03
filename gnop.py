@@ -18,17 +18,16 @@ __author__ = "Mariano Macchi"
 __license__ = "MIT"
 __version__ = "1.0.0"
 
-# TODO:
-# 1) make the display size a valid parameter e.g. python gnop -s 800 600
 
 from random import choice, randint
-from sys import exit
+import sys
 
 import pygame
 
+
 # The default display's size entails an aspect ratio of 4:3
-DISPLAY_WIDTH = 454
-DISPLAY_HEIGHT = 262
+DISPLAY_WIDTH = 640
+DISPLAY_HEIGHT = 480
 # Players' paddles starting coordinates
 LEFT_PADDLE_X = int(DISPLAY_WIDTH * 0.10)
 LEFT_PADDLE_Y = int(DISPLAY_HEIGHT * 0.45)
@@ -156,7 +155,7 @@ class Ball:
                 rally += 1
                 if (
                     rally % RALLY_SPEEDUP == 0
-                ):  # Ball speed increases when the number of exchanges
+                ):  # Ball speed increases with the number of exchanges
                     self.increase_speed()
         return rally
 
@@ -246,6 +245,39 @@ def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
     pygame.draw.rect(game_display, WHITE, ball, 0)
 
 
+def print_how_to_play(game_font, game_display):
+    """Print a quick how to play of with information about input"""
+    game_font.render_to(game_display, (0, 0), "WASD", WHITE)
+    # To print "ARROWS" right-aligned, the width of a rectangle holding this text is used as a reference
+    # Along the same line, the average scaled size (in pixels) of the used font is used to keep "Enter: Start"
+    # within the game's display
+    arrows_text_width = game_font.get_rect("ARROWS", size=FONT_SIZE).size[0]
+    game_font.render_to(
+        game_display, (DISPLAY_WIDTH - arrows_text_width, 0), "ARROWS", WHITE
+    )
+    game_font.render_to(
+        game_display,
+        (0, DISPLAY_HEIGHT - game_font.get_sized_height()),
+        "Enter: Start",
+        WHITE,
+    )
+
+
+def print_players_score(game_font, game_display, left_paddle, right_paddle):
+    """Print the current scoreboard with the score of both players"""
+    game_font.render_to(game_display, (0, 0), str(left_paddle.score), WHITE)
+    # To print the right player's score right-aligned, the same approach as for the "ARROWS" text is used
+    right_score_text_width = game_font.get_rect(
+        str(right_paddle.score), size=FONT_SIZE
+    ).size[0]
+    game_font.render_to(
+        game_display,
+        (DISPLAY_WIDTH - right_score_text_width, 0),
+        str(right_paddle.score),
+        WHITE,
+    )
+
+
 def main():
     """Initialize the game and keep track of the gameplay through a loop"""
     pygame.init()
@@ -265,26 +297,14 @@ def main():
     while not quit_signal:
 
         if not playing:
-            # Print a quick how to play
-            game_font.render_to(game_display, (0, 0), "WASD", WHITE)
-            # To print "ARROWS" right-aligned, the width of a rectangle holding this text is used as a reference
-            # Along the same line, the average scaled size (in pixels) of the used font is used to keep "Enter: Start"
-            # within the game's display
-            arrows_text_width = game_font.get_rect("ARROWS", size=FONT_SIZE).size[0]
-            game_font.render_to(
-                game_display, (DISPLAY_WIDTH - arrows_text_width, 0), "ARROWS", WHITE
-            )
-            game_font.render_to(
-                game_display,
-                (0, DISPLAY_HEIGHT - game_font.get_sized_height()),
-                "Enter: Start",
-                WHITE,
-            )
+            print_how_to_play(game_font, game_display)
+            ball.bounce_from_walls()
 
         for event in pygame.event.get():
-            print(event)
+            # print(event) # for debugging
             if event.type == pygame.QUIT:
                 quit_signal = True
+
         # Get input
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_RETURN]:  # New game
@@ -293,18 +313,9 @@ def main():
             right_paddle.score = 0
             rally = 0
             ball = Ball()
+
         if playing:
-            game_font.render_to(game_display, (0, 0), str(left_paddle.score), WHITE)
-            # To print the right player's score right-aligned, the same approach as for the "ARROWS" text is used
-            right_score_text_width = game_font.get_rect(
-                str(right_paddle.score), size=FONT_SIZE
-            ).size[0]
-            game_font.render_to(
-                game_display,
-                (DISPLAY_WIDTH - right_score_text_width, 0),
-                str(right_paddle.score),
-                WHITE,
-            )
+            print_players_score(game_font, game_display, left_paddle, right_paddle)
             handle_players_input(pressed_keys, left_paddle, right_paddle)
             side_wall_hit, rally = ball.handle_collisions(
                 left_paddle, right_paddle, rally
@@ -318,8 +329,6 @@ def main():
                 rally = 0
             if left_paddle.score == MAX_SCORE or right_paddle.score == MAX_SCORE:
                 playing = False
-        else:
-            ball.bounce_from_walls()
 
         pygame.display.update()  # Renders the display
 
@@ -328,7 +337,7 @@ def main():
         draw_gameplay(game_display, left_paddle, right_paddle, ball, playing)
         game_clock.tick(60)  # FPS
     pygame.quit()
-    exit()
+    sys.exit()
 
 
 if __name__ == "__main__":
