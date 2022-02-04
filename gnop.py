@@ -281,15 +281,11 @@ def main():
     left_paddle = Paddle(LEFT_PADDLE_X, LEFT_PADDLE_Y)
     right_paddle = Paddle(RIGHT_PADDLE_X, RIGHT_PADDLE_Y)
     ball = Ball()
+
     # Main loop
     playing = False
     quit_signal = False
-
     while not quit_signal:
-
-        if not playing:
-            print_how_to_play(game_font, game_display)
-            ball.bounce_from_walls()
 
         for event in pygame.event.get():
             # print(event) # for debugging
@@ -312,6 +308,7 @@ def main():
                 left_paddle, right_paddle, rally
             )
             if side_wall_hit:
+                # One player has scored
                 pygame.mixer.music.load("beep-03.wav")
                 pygame.mixer.music.play()
                 update_score(side_wall_hit, left_paddle, right_paddle)
@@ -320,6 +317,9 @@ def main():
                 rally = 0
             if left_paddle.score == MAX_SCORE or right_paddle.score == MAX_SCORE:
                 playing = False
+        else:
+            print_how_to_play(game_font, game_display)
+            ball.bounce_from_walls()
 
         pygame.display.update()  # Renders the display
 
