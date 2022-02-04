@@ -108,7 +108,7 @@ class Ball:
     MIN_INCLINATION = Paddle.RETURNING_ANGLES[0]  # direction along the y-axis
     MAX_INCLINATION = Paddle.RETURNING_ANGLES[4]
 
-    def __init__(self, orientation=None, playing=False):
+    def __init__(self, orientation=None):
         self.x = DISPLAY_CENTER
         self.y = randint(0, DISPLAY_HEIGHT)
         self.rect = pygame.Rect(self.x, self.y, Ball.WIDTH, Ball.HEIGHT)
@@ -123,10 +123,6 @@ class Ball:
         self.direction.append(
             randint(Ball.MIN_INCLINATION, Ball.MAX_INCLINATION)
         )  # y-axis
-        if not playing:
-            # Exclude straight lines so the ball can bounce around
-            while self.direction[1] == 0:
-                self.direction[1] = randint(Ball.MIN_INCLINATION, Ball.MAX_INCLINATION)
 
     def move(self):
         """Move the ball along its current direction."""
@@ -152,9 +148,8 @@ class Ball:
                 self.direction[0] = -self.direction[0]
                 self.direction[1] = Paddle.RETURNING_ANGLES[rect]
                 rally += 1
-                if (
-                    rally % RALLY_SPEEDUP == 0
-                ):  # Ball speed increases with the number of exchanges
+                # Ball speed increases with the number of exchanges
+                if rally % RALLY_SPEEDUP == 0:
                     self.increase_speed()
         return rally
 
@@ -165,10 +160,7 @@ class Ball:
         side_wall_hit = None
         if self.rect.left < 0 or self.rect.right > DISPLAY_WIDTH:
             self.direction[0] = -self.direction[0]
-            if self.rect.left < 0:
-                side_wall_hit = LEFT_SIDE_WALL
-            else:
-                side_wall_hit = RIGHT_SIDE_WALL
+            side_wall_hit = LEFT_SIDE_WALL if self.rect.left < 0 else RIGHT_SIDE_WALL
         elif self.rect.top < 0 or self.rect.bottom > DISPLAY_HEIGHT:
             self.direction[1] = -self.direction[1]
         return side_wall_hit
