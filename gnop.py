@@ -237,7 +237,7 @@ def draw_gameplay(game_display, left_paddle, right_paddle, ball, playing):
 
 
 def print_how_to_play(game_font, game_display):
-    """Print a quick how to play of with information about input"""
+    """Print a quick how to play with information about input commands"""
     game_font.render_to(game_display, (0, 0), "WASD", WHITE)
     # To print "ARROWS" right-aligned, the width of a rectangle holding this text is used as a reference
     # Along the same line, the average scaled size (in pixels) of the used font is used to keep "Enter: Start"
