@@ -16,7 +16,7 @@ then
 git clone https://github.com/marianomacchi/gnop.git
 ```
 
-or simply download the gnop.py file.
+or simply download the files in the repository to the same folder.
 
 ## Usage
 
